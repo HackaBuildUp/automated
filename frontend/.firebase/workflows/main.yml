@@ -1,67 +1,49 @@
-name: Deploy to Firebase Hosting
+name: Firebase CI
 
 on:
   push:
-    branches:
-      - main
+    branches: main
 
 jobs:
-  build_and_deploy:
+  build:
+
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [15.x]
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
+    - uses: actions/checkout@v3
+    - name: Use Node.js version ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - run: npm i
+    - run: npm install -g firebase-tools
+    - run: npm run test
+    - run: npm run build
+    - name: Archive Build
+      uses: actions/upload-artifact@v3
+      with:
+        name: build
+        path: build
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download Build
+        uses: actions/download-artifact@v3
         with:
-          node-version: '20.5.0'
-          
-      - name: List repository contents
-        run: |
-          echo "Repository root contents:"
-          ls -la
-          echo "\nRepository structure:"
-          tree || (apt-get update && apt-get install -y tree && tree)
-          echo "\nChecking if frontend directory exists:"
-          if [ -d "frontend" ]; then
-            echo "Frontend directory exists"
-            echo "Frontend directory contents:"
-            ls -la frontend/
-            echo "\nChecking for package.json:"
-            if [ -f "frontend/package.json" ]; then
-              echo "package.json exists"
-              cat frontend/package.json
-            else
-              echo "package.json not found!"
-            fi
-          else
-            echo "Frontend directory does not exist!"
-          fi
-
-      - name: Install dependencies
-        if: ${{ success() }}
-        working-directory: ./frontend
-        run: |
-          pwd
-          npm ci
-        
-      - name: Build
-        if: ${{ success() }}
-        working-directory: ./frontend
+          name: build
+          path: build
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only hosting
         env:
-          CI: false
-        run: npm run build
-
-      - name: Deploy to Firebase Hosting
-        if: ${{ success() }}
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-          channelId: live
-          projectId: '${{ secrets.FIREBASE_PROJECT_ID }}'
-          entryPoint: './frontend'
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
