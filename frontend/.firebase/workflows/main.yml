@@ -8,6 +8,10 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend  # Set the default working directory for all run steps
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -32,3 +36,4 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           channelId: live
           projectId: '${{ secrets.FIREBASE_PROJECT_ID }}'
+          entryPoint: './frontend'  # Specify the Firebase configuration directory
