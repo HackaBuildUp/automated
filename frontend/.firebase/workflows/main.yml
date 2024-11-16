@@ -8,40 +8,36 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Debug directory structure
-        run: |
-          pwd
-          ls -la
-          cd ..
-          ls -la
-          echo "Current working directory structure:"
-          find . -type f -name "package.json"
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.5.0'
           
-      - name: Navigate to frontend
+      - name: Debug directory
         run: |
-          cd $GITHUB_WORKSPACE/frontend
+          echo "Current directory:"
           pwd
+          echo "Directory contents:"
           ls -la
+          echo "Frontend directory contents:"
+          ls -la frontend/
           
-
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+        
       - name: Build
-        working-directory: $GITHUB_WORKSPACE/frontend
+        run: |
+          cd frontend
+          npm run build
         env:
           CI: false
-        run: npm run build
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
