@@ -36,9 +36,6 @@ jobs:
           pwd
           ls -la
           
-      - name: Install dependencies
-        working-directory: $GITHUB_WORKSPACE/frontend
-        run: npm install
 
       - name: Build
         working-directory: $GITHUB_WORKSPACE/frontend
