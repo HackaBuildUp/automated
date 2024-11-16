@@ -10,24 +10,38 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./frontend  # Set the default working directory for all run steps
+        working-directory: ./frontend
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Navigate to Project Directory
-        run: cd ./frontend
+      - name: Debug directory structure
+        run: |
+          pwd
+          ls -la
+          cd ..
+          ls -la
+          echo "Current working directory structure:"
+          find . -type f -name "package.json"
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.5.0'
           
+      - name: Navigate to frontend
+        run: |
+          cd $GITHUB_WORKSPACE/frontend
+          pwd
+          ls -la
+          
       - name: Install dependencies
+        working-directory: $GITHUB_WORKSPACE/frontend
         run: npm install
 
       - name: Build
+        working-directory: $GITHUB_WORKSPACE/frontend
         env:
           CI: false
         run: npm run build
@@ -39,4 +53,4 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           channelId: live
           projectId: '${{ secrets.FIREBASE_PROJECT_ID }}'
-          entryPoint: './frontend'  # Specify the Firebase configuration directory
+          entryPoint: './frontend'
