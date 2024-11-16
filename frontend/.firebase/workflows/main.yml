@@ -12,34 +12,52 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.5.0'
           
-      - name: Debug directory
+      - name: List repository contents
         run: |
-          echo "Current directory:"
-          pwd
-          echo "Directory contents:"
+          echo "Repository root contents:"
           ls -la
-          echo "Frontend directory contents:"
-          ls -la frontend/
-          
+          echo "\nRepository structure:"
+          tree || (apt-get update && apt-get install -y tree && tree)
+          echo "\nChecking if frontend directory exists:"
+          if [ -d "frontend" ]; then
+            echo "Frontend directory exists"
+            echo "Frontend directory contents:"
+            ls -la frontend/
+            echo "\nChecking for package.json:"
+            if [ -f "frontend/package.json" ]; then
+              echo "package.json exists"
+              cat frontend/package.json
+            else
+              echo "package.json not found!"
+            fi
+          else
+            echo "Frontend directory does not exist!"
+          fi
+
       - name: Install dependencies
+        if: ${{ success() }}
+        working-directory: ./frontend
         run: |
-          cd frontend
+          pwd
           npm ci
         
       - name: Build
-        run: |
-          cd frontend
-          npm run build
+        if: ${{ success() }}
+        working-directory: ./frontend
         env:
           CI: false
+        run: npm run build
 
       - name: Deploy to Firebase Hosting
+        if: ${{ success() }}
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
